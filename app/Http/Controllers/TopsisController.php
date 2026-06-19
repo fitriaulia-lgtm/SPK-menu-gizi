@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Alternative;
+use App\Models\Criteria;
 use App\Services\TopsisService;
 
 class TopsisController extends Controller
@@ -16,28 +17,41 @@ class TopsisController extends Controller
     }
 
     /**
-     * Membuka dashboard yang berisi daftar alternatif menu dari database
+     * Membuka dashboard yang berisi ringkasan data SPK dari database.
      */
     public function index()
     {
-        // Mengambil data alternatif riil dari database
-        $alternatives = Alternative::all();
+        // Ambil alternatif dari database dengan eager loading nilai gizi
+        $alternatives = Alternative::with('alternativeValues.criteria')->get();
 
-        return view('user.dashboard', compact('alternatives'));
+        // Bobot AHP untuk ditampilkan di kartu dashboard
+        $ahpWeights = [
+            'C1' => ['label' => 'Energi',      'weight' => 0.0953, 'pct' => 10],
+            'C2' => ['label' => 'Protein',     'weight' => 0.3104, 'pct' => 31],
+            'C3' => ['label' => 'Lemak',       'weight' => 0.0592, 'pct' =>  6],
+            'C4' => ['label' => 'Karbohidrat', 'weight' => 0.2389, 'pct' => 24],
+            'C5' => ['label' => 'Serat',       'weight' => 0.2961, 'pct' => 30],
+        ];
+
+        // Hitung TOPSIS untuk menampilkan rekomendasi teratas di hero card
+        $topsisData = $this->topsisService->calculate();
+        $bestMenu   = $topsisData['bestMenu'];
+
+        return view('user.dashboard', compact('alternatives', 'ahpWeights', 'bestMenu'));
     }
 
     /**
-     * Memicu perhitungan matematika TOPSIS dan menampilkan hasil perangkingan
+     * Memicu perhitungan matematika TOPSIS dan menampilkan hasil perangkingan.
      */
     public function calculate()
     {
-        // Menjalankan kalkulasi TOPSIS secara dinamis dari database
         $topsisData = $this->topsisService->calculate();
 
         $rankingResults = $topsisData['rankingResults'];
-        $bestMenu = $topsisData['bestMenu'];
-        $steps = $topsisData['steps']; // Bisa digunakan di view jika ingin menampilkan rincian tabel normalisasi
+        $bestMenu       = $topsisData['bestMenu'];
+        $steps          = $topsisData['steps'];
+        $criterias      = Criteria::all();
 
-        return view('user.result', compact('rankingResults', 'bestMenu', 'steps'));
+        return view('user.result', compact('rankingResults', 'bestMenu', 'steps', 'criterias'));
     }
 }

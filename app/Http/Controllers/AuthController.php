@@ -12,9 +12,9 @@ class AuthController extends Controller
      */
     public function showLogin()
     {
-        // Jika sudah login, langsung lempar ke portal/dashboard admin
+        // Jika sudah login, langsung lempar ke dashboard
         if (Auth::check()) {
-            return redirect()->route('public.portal'); // Sementara balik ke depan atau panel admin Anda
+            return redirect()->route('admin.dashboard');
         }
         return view('auth.login');
     }
@@ -40,8 +40,8 @@ class AuthController extends Controller
         if (Auth::attempt($credentials, $remember)) {
             $request->session()->regenerate();
 
-            // Redirect ke halaman yang dituju atau default
-            return redirect()->intended('/');
+            // Redirect ke dashboard setelah login berhasil
+            return redirect()->route('admin.dashboard');
         }
 
         // Jika gagal, kembalikan dengan pesan error khusus
@@ -60,6 +60,6 @@ class AuthController extends Controller
         $request->session()->invalidate();
         $request->session()->regenerateToken();
 
-        return redirect()->route('public.portal');
+        return redirect()->route('login');
     }
 }
