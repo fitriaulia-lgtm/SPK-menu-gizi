@@ -1,72 +1,67 @@
 @extends('layouts.user')
 
 @section('content')
-<div class="container-fluid px-0">
-    <div class="d-flex justify-content-between align-items-center mb-4">
+<div class="space-y-6">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-gray-200/60 dark:border-slate-800/60 pb-4">
         <div>
-            <h4 class="fw-bold text-secondary mb-1">Hasil Perangkingan Menu Gizi Seimbang</h4>
-            <p class="text-muted mb-0">Rekomendasi diurutkan secara objektif berdasarkan nilai kedekatan relatif tertinggi terhadap solusi ideal positif.</p>
+            <h2 class="text-xl font-extrabold tracking-tight text-slate-800 dark:text-white">Hasil Perangkingan Menu Gizi Seimbang</h2>
+            <p class="text-xs font-semibold text-gray-400 dark:text-slate-400 mt-0.5">Urutan kelayakan dihitung menggunakan metode gabungan AHP - TOPSIS[cite: 41].</p>
         </div>
-        <button class="btn btn-outline-secondary btn-sm bg-white shadow-sm" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> Cetak Laporan</button>
     </div>
 
-    <!-- Menu Terbaik Card -->
-    <div class="card border-0 border-start border-5 border-success shadow-sm p-4 mb-4 bg-white" style="border-radius: 10px;">
-        <div class="d-flex align-items-start">
-            <div class="p-3 bg-success text-white rounded-circle me-4 fs-3 shadow-sm"><i class="fa-solid fa-trophy"></i></div>
-            <div>
-                <span class="badge bg-success mb-2 text-uppercase px-3 py-1 rounded-pill">Rekomendasi Utama (Peringkat 1)</span>
-                <h4 class="fw-bold text-dark mb-1">A10 - Nasi putih, fried chicken, tahu pong, mix vegetable, buah naga</h4>
-                <p class="mb-0 text-muted">Nilai Preferensi Akhir ($V_i$): <strong class="text-success fs-5">0.7536</strong></p>
+    <div class="relative overflow-hidden rounded-2xl bg-gradient-to-r from-blue-900 via-primary to-blue-800 p-6 text-white shadow-sm border border-transparent dark:border-slate-800 transition-all duration-300 hover:shadow-md group">
+        <div class="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+            <div class="flex items-start gap-5">
+                <div class="w-12 h-12 rounded-xl bg-amber-400/20 border border-amber-400/30 flex items-center justify-center text-amber-300 shrink-0 text-2xl shadow-inner">🏆</div>
+                <div class="space-y-1">
+                    <span class="inline-block px-2.5 py-0.5 bg-amber-400 text-slate-900 font-black text-[10px] uppercase tracking-wider rounded-full shadow-sm">Rekomendasi Utama (Peringkat 1)</span>
+                    <h3 class="text-lg font-black tracking-tight text-white mt-1">{{ $bestMenu['code'] }} — {{ $bestMenu['name'] }}</h3>
+                </div>
+            </div>
+            <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 shrink-0 text-center min-w-[120px]">
+                <div class="text-[9px] font-bold text-blue-200 uppercase tracking-widest">Nilai Preferensi Vi</div>
+                <div class="text-xl font-black text-amber-300 mt-0.5 tracking-tight">{{ number_format($bestMenu['score'], 4) }}</div>
             </div>
         </div>
     </div>
 
-    <!-- Tabel Peringkat Keseluruhan -->
-    <div class="card border-0 shadow-sm" style="border-radius: 12px;">
-        <div class="card-header bg-white py-3 border-0">
-            <h5 class="fw-bold text-secondary mb-0"><i class="fa-solid fa-award me-2"></i>Urutan Kelayakan Seluruh Alternatif Menu</h5>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover align-middle mb-0">
-                    <thead class="table-light text-secondary fw-semibold">
-                        <tr>
-                            <th class="text-center" style="width: 10%;">Peringkat</th>
-                            <th style="width: 15%;">Kode Menu</th>
-                            <th style="width: 55%;">Komposisi Sajian Makanan</th>
-                            <th class="text-end pe-5" style="width: 20%;">Nilai Kedekatan ($V_i$)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <!-- Data Baris Sesuai Hasil Perhitungan Pada Tabel 4.16 Lanjutan -->
-                        <tr class="table-success table-opacity-10">
-                            <td class="text-center fw-bold fs-5 text-success">1</td>
-                            <td class="fw-bold text-primary">A10</td>
-                            <td>Nasi putih, fried chicken, tahu pong, mix vegetable, buah naga</td>
-                            <td class="text-end pe-5 fw-bold text-success">0.7536</td>
-                        </tr>
-                        <tr>
-                            <td class="text-center fw-bold">2</td>
-                            <td class="fw-bold text-primary">A12</td>
-                            <td>Nasi kuning, telur dadar suwir, abon ayam, acar timun wortel, buah apel</td>
-                            <td class="text-end pe-5 fw-bold text-dark">0.7270</td>
-                        </tr>
-                        <tr>
-                            <td class="text-center fw-bold">3</td>
-                            <td class="fw-bold text-primary">A1</td>
-                            <td>Nasi kuning, abon ayam, tempe orek telur dadar suwir, anggur, timun tomat</td>
-                            <td class="text-end pe-5 fw-bold text-dark">0.6450</td>
-                        </tr>
-                        <tr>
-                            <td class="text-center fw-bold">4</td>
-                            <td class="fw-bold text-primary">A8</td>
-                            <td>Onigiri, chicken strip, salad sayur, bola-bola tahu, buah kelengkeng</td>
-                            <td class="text-end pe-5 fw-bold text-dark">0.6311</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
+    <div class="bg-white dark:bg-slate-800/60 border border-gray-200/80 dark:border-slate-700/60 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-md">
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm border-collapse">
+                <thead>
+                    <tr class="bg-gray-50/50 dark:bg-slate-900/30 text-gray-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-gray-200/60 dark:border-slate-700/40">
+                        <th class="px-6 py-3.5 text-center" style="width: 12%;">Rank</th>
+                        <th class="px-6 py-3.5" style="width: 15%;">Kode Menu</th>
+                        <th class="px-6 py-3.5" style="width: 53%;">Komposisi Hidangan Sajian</th>
+                        <th class="px-6 py-3.5 text-end pr-8" style="width: 20%;">Nilai Preferensi ($V_i$)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
+                    @foreach($rankingResults as $res)
+                    <tr class="transition-all duration-150 group/row {{ $res['rank'] == 1 ? 'bg-emerald-500/5 dark:bg-emerald-500/5 font-medium' : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/30' }}">
+                        <td class="px-6 py-4 text-center">
+                            @if($res['rank'] <= 3)
+                                <span class="inline-flex w-6 h-6 items-center justify-center rounded-full text-xs font-black
+                                    {{ $res['rank'] == 1 ? 'bg-amber-400 text-slate-950' : '' }}
+                                    {{ $res['rank'] == 2 ? 'bg-slate-200 text-slate-900' : '' }}
+                                    {{ $res['rank'] == 3 ? 'bg-amber-700 text-white' : '' }}">
+                                    {{ $res['rank'] }}
+                                </span>
+                            @else
+                                <span class="text-xs font-bold text-gray-400 dark:text-slate-500">{{ $res['rank'] }}</span>
+                            @endif
+                        </td>
+                        <td class="px-6 py-4 font-black text-primary dark:text-blue-400 tracking-tight">{{ $res['code'] }}</td>
+                        <td class="px-6 py-4 text-xs font-medium text-gray-600 dark:text-slate-300 group-hover/row:text-slate-950 dark:group-hover/row:text-white transition-colors">
+                            {{ $res['name'] }}
+                        </td>
+                        <td class="px-6 py-4 text-end pr-8 font-black text-slate-800 dark:text-slate-200 tracking-tight {{ $res['rank'] == 1 ? 'text-emerald-600 dark:text-emerald-400' : '' }}">
+                            {{ number_format($res['score'], 4) }}
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
         </div>
     </div>
 </div>
