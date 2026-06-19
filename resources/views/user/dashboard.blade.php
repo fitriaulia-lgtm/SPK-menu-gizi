@@ -68,7 +68,7 @@
                 'C4' => ['stroke' => 'stroke-cyan-600 dark:stroke-cyan-500',    'text' => 'text-cyan-600 dark:text-cyan-400'],
                 'C5' => ['stroke' => 'stroke-teal-600 dark:stroke-teal-500',    'text' => 'text-teal-600 dark:text-teal-400'],
             ];
-            $circumference = 251.2; {{-- 2 * pi * r (r=40) --}}
+            $circumference = 251.2; 
             @endphp
 
             <div class="space-y-3.5 flex-grow flex flex-col justify-center">
