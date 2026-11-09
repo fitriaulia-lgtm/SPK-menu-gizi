@@ -79,6 +79,21 @@
                 </div>
             </a>
 
+            <a class="flex justify-between items-center pl-4 pr-0 py-3.5 rounded-l-md border-r-[4px] transition-all duration-200 group
+                {{ request()->routeIs('admin.recommendation') 
+                    ? 'text-primary dark:text-blue-400 font-semibold bg-primary-light/60 dark:bg-blue-500/10 border-primary dark:border-blue-500' 
+                    : 'text-gray-600 dark:text-slate-400 font-medium border-transparent hover:bg-gray-100/70 dark:hover:bg-slate-700/40 hover:text-primary dark:hover:text-blue-400' }}" 
+               href="{{ route('admin.recommendation') }}">
+                <div class="flex items-center gap-4">
+                    <span class="material-symbols-outlined transition-colors
+                        {{ request()->routeIs('admin.recommendation') ? 'text-primary dark:text-blue-400' : 'text-gray-400 dark:text-slate-500 group-hover:text-primary dark:group-hover:text-blue-400' }}"
+                        style="{{ request()->routeIs('admin.recommendation') ? "font-variation-settings: 'FILL' 1;" : '' }}">
+                        restaurant_menu
+                    </span>
+                    <span class="text-[15px]">Rekomendasi Menu</span>
+                </div>
+            </a>
+
             @if(auth()->user()->role === 'admin')
             <a class="flex justify-between items-center pl-4 pr-0 py-3.5 rounded-l-md border-r-[4px] transition-all duration-200 group
                 {{ request()->routeIs('criterias.*') 
@@ -111,10 +126,12 @@
         </nav>
 
         <div class="p-4 space-y-2 border-t border-outline-variant/60 dark:border-slate-700/60 bg-[#f8faff] dark:bg-slate-800 transition-colors duration-300">
-            <a class="flex items-center gap-4 pl-4 py-2.5 text-gray-600 dark:text-slate-400 font-medium hover:bg-gray-100/70 dark:hover:bg-slate-700/40 hover:text-primary dark:hover:text-blue-400 rounded-md transition-colors group" href="#">
-                <span class="material-symbols-outlined text-gray-400 dark:text-slate-500 group-hover:text-primary dark:group-hover:text-blue-400">settings</span>
-                <span class="text-[15px]">Settings</span>
+            @if(auth()->user()->role === 'admin')
+            <a class="flex items-center gap-4 pl-4 py-2.5 text-gray-600 dark:text-slate-400 font-medium hover:bg-gray-100/70 dark:hover:bg-slate-700/40 hover:text-primary dark:hover:text-blue-400 rounded-md transition-colors group" href="{{ route('admin.profile.edit') }}">
+                <span class="material-symbols-outlined text-gray-400 dark:text-slate-500 group-hover:text-primary dark:group-hover:text-blue-400">person</span>
+                <span class="text-[15px]">Kelola Profil</span>
             </a>
+            @endif
             
             <form action="{{ route('logout') }}" method="POST" id="logout-form">
                 @csrf

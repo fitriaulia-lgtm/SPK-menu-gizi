@@ -3,6 +3,10 @@
 @section('content')
 <div class="space-y-6">
 
+    @php
+        $bestMenu = $bestMenu ?? ($rankingResults[0] ?? null);
+    @endphp
+
     {{-- ═══════════════════════════════════════════════════════════════
          HEADER
     ═══════════════════════════════════════════════════════════════ --}}
@@ -39,16 +43,12 @@
                     <h3 class="text-lg font-black tracking-tight text-white mt-1">
                         {{ $bestMenu['code'] }} — {{ $bestMenu['name'] }}
                     </h3>
-                    <p class="text-xs text-blue-200 font-medium">
-                        D⁺ = {{ number_format($bestMenu['d_pos'], 6) }} &nbsp;|&nbsp;
-                        D⁻ = {{ number_format($bestMenu['d_neg'], 6) }}
-                    </p>
                 </div>
             </div>
             <div class="bg-white/10 backdrop-blur-md px-4 py-2.5 rounded-xl border border-white/10 shrink-0 text-center min-w-[120px]">
                 <div class="text-[9px] font-bold text-blue-200 uppercase tracking-widest">Nilai Preferensi Vi</div>
                 <div class="text-xl font-black text-amber-300 mt-0.5 tracking-tight">
-                    {{ number_format($bestMenu['score'], 4) }}
+                    {{ str_replace('.', ',', number_format($bestMenu['score'], 4)) }}
                 </div>
             </div>
         </div>
@@ -71,16 +71,17 @@
             <table class="w-full text-left text-sm border-collapse">
                 <thead>
                     <tr class="bg-gray-50/50 dark:bg-slate-900/30 text-gray-400 dark:text-slate-400 font-bold text-[10px] uppercase tracking-widest border-b border-gray-200/60 dark:border-slate-700/40">
-                        <th class="px-4 py-3.5 text-center" style="width: 8%;">Rank</th>
-                        <th class="px-4 py-3.5" style="width: 10%;">Kode Menu</th>
-                        <th class="px-4 py-3.5" style="width: 42%;">Komposisi Hidangan Sajian</th>
-                        <th class="px-4 py-3.5 text-end" style="width: 13%;">D⁺ (Ideal+)</th>
-                        <th class="px-4 py-3.5 text-end" style="width: 13%;">D⁻ (Ideal−)</th>
-                        <th class="px-4 py-3.5 text-end pr-6" style="width: 14%;">Vi (Preferensi)</th>
+                        <th class="px-4 py-3.5 text-center" style="width: 6%;">Rank</th>
+                        <th class="px-4 py-3.5" style="width: 10%;">Nilai V</th>
+                        <th class="px-4 py-3.5" style="width: 32%;">Alternatif</th>
+                        <th class="px-4 py-3.5 text-end" style="width: 16%;">D⁺</th>
+                        <th class="px-4 py-3.5 text-end" style="width: 16%;">D⁻</th>
+                        <th class="px-4 py-3.5 text-end pr-6" style="width: 20%;">Nilai Preferensi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-100 dark:divide-slate-700/40 text-slate-700 dark:text-slate-300">
                     @forelse($rankingResults as $res)
+                    @php $label = 'V' . intval(substr($res['code'], 1)); @endphp
                     <tr class="transition-all duration-150 group/row
                         {{ $res['rank'] == 1 ? 'bg-emerald-500/5 dark:bg-emerald-500/5 font-medium' : 'hover:bg-slate-50/60 dark:hover:bg-slate-800/30' }}">
                         <td class="px-4 py-4 text-center">
@@ -95,20 +96,19 @@
                                 <span class="text-xs font-bold text-gray-400 dark:text-slate-500">{{ $res['rank'] }}</span>
                             @endif
                         </td>
-                        <td class="px-4 py-4 font-black text-primary dark:text-blue-400 tracking-tight">{{ $res['code'] }}</td>
-                        <td class="px-4 py-4 text-xs font-medium text-gray-600 dark:text-slate-300
-                                   group-hover/row:text-slate-950 dark:group-hover/row:text-white transition-colors leading-relaxed">
-                            {{ $res['name'] }}
+                        <td class="px-4 py-4 font-bold text-slate-800 dark:text-slate-200 tracking-tight">{{ $label }}</td>
+                        <td class="px-4 py-4 text-xs font-medium text-gray-600 dark:text-slate-300 transition-colors leading-relaxed">
+                            {{ $res['code'] }} — {{ $res['name'] }}
                         </td>
                         <td class="px-4 py-4 text-end font-mono text-xs font-semibold text-slate-600 dark:text-slate-400">
-                            {{ number_format($res['d_pos'], 6) }}
+                            {{ str_replace('.', ',', number_format($res['d_pos'] ?? 0, 4)) }}
                         </td>
                         <td class="px-4 py-4 text-end font-mono text-xs font-semibold text-slate-600 dark:text-slate-400">
-                            {{ number_format($res['d_neg'], 6) }}
+                            {{ str_replace('.', ',', number_format($res['d_neg'] ?? 0, 4)) }}
                         </td>
                         <td class="px-4 py-4 text-end pr-6 font-black text-slate-800 dark:text-slate-200 tracking-tight
                             {{ $res['rank'] == 1 ? 'text-emerald-600 dark:text-emerald-400' : '' }}">
-                            {{ number_format($res['score'], 4) }}
+                            {{ str_replace('.', ',', number_format($res['score'], 4)) }}
                         </td>
                     </tr>
                     @empty
@@ -152,13 +152,12 @@
                 </h4>
                 <div class="flex flex-wrap gap-3">
                     @php
-                    $ahpFixed = ['C1'=>0.0953,'C2'=>0.3104,'C3'=>0.0592,'C4'=>0.2389,'C5'=>0.2961];
-                    $critNames = ['C1'=>'Energi','C2'=>'Protein','C3'=>'Lemak','C4'=>'Karbohidrat','C5'=>'Serat'];
+                        $matrixYItems = $steps['matrixY'] ?? [];
                     @endphp
-                    @foreach($ahpFixed as $code => $w)
+                    @foreach($ahpWeights as $code => $info)
                     <div class="bg-primary/5 dark:bg-blue-500/10 border border-primary/10 dark:border-blue-500/20 rounded-xl px-4 py-2 text-center min-w-[100px]">
-                        <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400">{{ $code }} – {{ $critNames[$code] }}</div>
-                        <div class="text-sm font-black text-primary dark:text-blue-400">{{ $w }}</div>
+                        <div class="text-[10px] font-bold text-gray-400 dark:text-slate-400">{{ $code }} – {{ $info['label'] ?? $code }}</div>
+                        <div class="text-sm font-black text-primary dark:text-blue-400">{{ number_format($info['weight'] ?? 0, 4) }}</div>
                     </div>
                     @endforeach
                 </div>
@@ -180,7 +179,10 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @foreach($rankingResults as $res)
+                        @php
+                            $orderedRankingResults = collect($rankingResults)->sortBy(fn($res) => intval(substr($res['code'], 1)))->values();
+                        @endphp
+                        @foreach($orderedRankingResults as $res)
                         @if(isset($steps['matrixY'][$res['id']]))
                         <tr class="hover:bg-slate-50/60 dark:hover:bg-slate-800/20 {{ $res['rank'] == 1 ? 'bg-emerald-50/40 dark:bg-emerald-950/10 font-semibold' : '' }}">
                             <td class="px-3 py-2 font-black text-primary dark:text-blue-400 border border-gray-200/40 dark:border-slate-700/40">
@@ -188,7 +190,7 @@
                             </td>
                             @foreach($criterias as $crit)
                             <td class="px-3 py-2 text-center font-mono text-slate-700 dark:text-slate-300 border border-gray-200/40 dark:border-slate-700/40">
-                                {{ number_format($steps['matrixY'][$res['id']][$crit->code] ?? 0, 6) }}
+                                {{ number_format($steps['matrixY'][$res['id']][$crit->code] ?? 0, 4) }}
                             </td>
                             @endforeach
                         </tr>
@@ -199,7 +201,7 @@
                             <td class="px-3 py-2 font-extrabold text-emerald-700 dark:text-emerald-400 border border-gray-200/40 dark:border-slate-700/40">A⁺ (Ideal+)</td>
                             @foreach($criterias as $crit)
                             <td class="px-3 py-2 text-center font-mono text-emerald-700 dark:text-emerald-400 border border-gray-200/40 dark:border-slate-700/40">
-                                {{ number_format($steps['idealPos'][$crit->code] ?? 0, 6) }}
+                                {{ number_format($steps['idealPos'][$crit->code] ?? 0, 4) }}
                             </td>
                             @endforeach
                         </tr>
@@ -208,7 +210,7 @@
                             <td class="px-3 py-2 font-extrabold text-red-600 dark:text-red-400 border border-gray-200/40 dark:border-slate-700/40">A⁻ (Ideal−)</td>
                             @foreach($criterias as $crit)
                             <td class="px-3 py-2 text-center font-mono text-red-600 dark:text-red-400 border border-gray-200/40 dark:border-slate-700/40">
-                                {{ number_format($steps['idealNeg'][$crit->code] ?? 0, 6) }}
+                                {{ number_format($steps['idealNeg'][$crit->code] ?? 0, 4) }}
                             </td>
                             @endforeach
                         </tr>

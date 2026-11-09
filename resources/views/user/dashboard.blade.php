@@ -40,12 +40,20 @@
                     </p>
                     @endif
                 </div>
-                <a href="{{ route('admin.result') }}"
-                   class="bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-extrabold text-xs flex items-center gap-2 shadow-lg transition-all duration-300 hover:-translate-y-0.5 shrink-0 group/btn">
+                <div class="flex gap-3">
+                    <a href="{{ route('admin.result') }}"
+                       class="bg-gradient-to-r from-emerald-400 to-teal-500 hover:from-emerald-500 hover:to-teal-600 text-white px-6 py-3 rounded-xl font-extrabold text-xs flex items-center gap-2 shadow-lg transition-all duration-300 hover:-translate-y-0.5 shrink-0 group/btn">
                     <span class="material-symbols-outlined">calculate</span>
                     Hitung &amp; Analisis Menu (TOPSIS)
                     <span class="material-symbols-outlined !text-sm transform group-hover/btn:translate-x-1 transition-transform">arrow_forward</span>
-                </a>
+                    </a>
+                    @if(auth()->user()->role === 'admin')
+                        <a href="{{ route('admin.profile.edit') }}" class="px-4 py-2 bg-white/90 dark:bg-slate-700/60 border rounded-lg font-bold text-sm flex items-center gap-2">
+                            <span class="material-symbols-outlined">person</span>
+                            Kelola Profil
+                        </a>
+                    @endif
+                </div>
             </div>
         </div>
 
@@ -113,7 +121,7 @@
                 ['icon' => 'restaurant_menu', 'value' => $alternatives->count(), 'label' => 'Total Alternatif Menu', 'color' => 'text-primary dark:text-blue-400'],
                 ['icon' => 'analytics',       'value' => 5,                       'label' => 'Kriteria Gizi Aktif',   'color' => 'text-emerald-600 dark:text-emerald-400'],
                 ['icon' => 'military_tech',   'value' => $bestMenu ? $bestMenu['code'] : '-', 'label' => 'Peringkat 1 TOPSIS', 'color' => 'text-amber-500 dark:text-amber-400'],
-                ['icon' => 'verified',        'value' => 'CR=2.47%', 'label' => 'Konsistensi AHP', 'color' => 'text-teal-600 dark:text-teal-400'],
+                ['icon' => 'verified',        'value' => 'CR=0,76% (0,0076)', 'label' => 'Konsistensi AHP', 'color' => 'text-teal-600 dark:text-teal-400'],
             ];
         @endphp
         @foreach($stats as $stat)
@@ -193,6 +201,7 @@
             </table>
         </div>
     </section>
+
 
 </div>
 @endsection

@@ -19,11 +19,11 @@ class TopsisTest extends TestCase
     //  Bobot AHP tetap (sama persis dengan TopsisService)
     // ─────────────────────────────────────────────────────────────────
     private array $weights = [
-        'C1' => 0.0953,
-        'C2' => 0.3104,
-        'C3' => 0.0592,
-        'C4' => 0.2389,
-        'C5' => 0.2961,
+        'C1' => 0.2897,
+        'C2' => 0.2897,
+        'C3' => 0.1331,
+        'C4' => 0.1924,
+        'C5' => 0.0951,
     ];
 
     /**

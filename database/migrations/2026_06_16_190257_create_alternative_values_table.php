@@ -10,11 +10,11 @@ return new class extends Migration
     {
         Schema::create('alternative_values', function (Blueprint $table) {
             $table->id();
-            // Foreign Key ke tabel alternatives dan criterias
-            $table->foreignId('alternative_id')->constrained('alternatives')->onDelete('cascade');
-            $table->foreignId('criteria_id')->constrained('criterias')->onDelete('cascade');
-            // Menggunakan double karena data gizi makro memiliki pecahan desimal
-            $table->double('value'); 
+            $table->integer('alternative_id');
+            $table->foreign('alternative_id')->references('Id_alternatif')->on('alternatives')->onDelete('cascade');
+            $table->integer('criteria_id');
+            $table->foreign('criteria_id')->references('Id_kriteria')->on('criterias')->onDelete('cascade');
+            $table->double('value');
             $table->timestamps();
         });
     }

@@ -38,11 +38,10 @@
                     <tr class="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-all duration-150">
                         <td class="px-6 py-4 font-black text-primary dark:text-blue-400 tracking-tight">{{ $alt->code }}</td>
                         <td class="px-6 py-4 font-medium text-xs text-gray-600 dark:text-slate-300 leading-relaxed">{{ $alt->name }}</td>
-                        
+
                         @foreach($criterias as $crit)
                             @php
-                                $valObj = $alt->alternativeValues->where('criteria_id', $crit->id)->first();
-                                $val = $valObj ? $valObj->value : '-';
+                                $val = isset($altValues[$alt->id][$crit->code]) ? number_format($altValues[$alt->id][$crit->code], 2) : '-';
                             @endphp
                             <td class="px-3 py-4 text-center font-bold text-slate-800 dark:text-slate-200 text-xs">
                                 {{ $val }}

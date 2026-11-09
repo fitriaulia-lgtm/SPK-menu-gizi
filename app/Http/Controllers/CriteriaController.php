@@ -3,89 +3,112 @@
 namespace App\Http\Controllers;
 
 use App\Models\Criteria;
+use App\Services\TopsisService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 
 class CriteriaController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    protected $topsisService;
+
+    public function __construct(TopsisService $topsisService)
+    {
+        $this->topsisService = $topsisService;
+    }
+
+    private function backupScores(): void
+    {
+        DB::table('alternatives')->whereNull('score_backup')->update([
+            'score_backup' => DB::raw('score'),
+        ]);
+    }
+
+    private function invalidateScores(): void
+    {
+        DB::table('alternatives')->update(['score' => null]);
+        TopsisService::clearCache();
+    }
+
+    private function restoreBackup(): void
+    {
+        DB::table('alternatives')->whereNotNull('score_backup')->update([
+            'score' => DB::raw('score_backup'),
+            'score_backup' => null,
+        ]);
+        TopsisService::clearCache();
+    }
+
     public function index()
     {
         $criterias = Criteria::all();
-        // Vektor bobot AHP tetap untuk ditampilkan di view kriteria
-        $ahpWeights = [
-            'C1' => 0.0953,
-            'C2' => 0.3104,
-            'C3' => 0.0592,
-            'C4' => 0.2389,
-            'C5' => 0.2961,
-        ];
+        $ahpWeights = $this->topsisService->getWeights();
+
         return view('user.criterias.index', compact('criterias', 'ahpWeights'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
         return view('user.criterias.create');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $request->validate([
-            'code' => 'required|string|max:5|unique:criterias,code',
-            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:25|unique:criterias,code',
+            'name' => 'required|string|max:25',
             'attribute' => 'required|in:benefit,cost',
+            'weight' => 'nullable|numeric|min:0',
         ], [
             'code.required' => 'Kode kriteria wajib diisi.',
             'code.unique' => 'Kode kriteria sudah digunakan.',
             'name.required' => 'Nama kriteria wajib diisi.',
         ]);
 
-        Criteria::create($request->all());
+        $this->backupScores();
 
-        return redirect()->route('criterias.index')->with('success', 'Kriteria berhasil ditambahkan.');
+        Criteria::create($request->only(['code', 'name', 'attribute', 'weight']));
+
+        $this->invalidateScores();
+
+        return redirect()->route('criterias.index')->with('success', 'Kriteria berhasil ditambahkan. Nilai preferensi akan dihitung ulang otomatis.');
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Criteria $criteria)
     {
         return view('user.criterias.edit', compact('criteria'));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Criteria $criteria)
     {
         $request->validate([
-            'code' => 'required|string|max:5|unique:criterias,code,' . $criteria->id,
-            'name' => 'required|string|max:255',
+            'code' => 'required|string|max:25|unique:criterias,code,' . $criteria->id,
+            'name' => 'required|string|max:25',
             'attribute' => 'required|in:benefit,cost',
+            'weight' => 'nullable|numeric|min:0',
         ], [
             'code.required' => 'Kode kriteria wajib diisi.',
             'code.unique' => 'Kode kriteria sudah digunakan.',
             'name.required' => 'Nama kriteria wajib diisi.',
+            'weight.required' => 'Bobot AHP wajib diisi.',
         ]);
 
-        $criteria->update($request->all());
+        $this->backupScores();
 
-        return redirect()->route('criterias.index')->with('success', 'Kriteria berhasil diperbarui.');
+        $criteria->update($request->only(['code', 'name', 'attribute', 'weight']));
+
+        $this->invalidateScores();
+
+        return redirect()->route('criterias.index')->with('success', 'Kriteria berhasil diperbarui. Nilai preferensi akan dihitung ulang otomatis.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Criteria $criteria)
     {
+        $this->backupScores();
+
         $criteria->delete();
-        return redirect()->route('criterias.index')->with('success', 'Kriteria berhasil dihapus.');
+
+        $this->restoreBackup();
+
+        return redirect()->route('criterias.index')->with('success', 'Kriteria berhasil dihapus. Perhitungan sebelumnya dikembalikan.');
     }
 }

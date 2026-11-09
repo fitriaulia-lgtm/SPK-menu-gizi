@@ -9,11 +9,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('criterias', function (Blueprint $table) {
-            $table->id();
-            $table->string('code', 5)->unique(); // C1, C2, C3, dst.
-            $table->string('name');              // Energi, Protein, Lemak, dst.
-            $table->enum('attribute', ['benefit', 'cost'])->default('benefit');
-            $table->timestamps();
+            $table->integer('Id_kriteria', 4);
+            $table->string('Kode_kriteria', 25)->unique(); // C1, C2, C3, dst.
+            $table->string('Nama_Parameter', 25);          // Energi, Protein, Lemak, dst.
+            $table->enum('Atribut', ['benefit', 'cost'])->default('benefit');
+            $table->double('Bobot_ahp')->nullable();
+            $table->primary('Id_kriteria');
         });
     }
 

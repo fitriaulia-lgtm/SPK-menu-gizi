@@ -39,6 +39,15 @@
             @enderror
         </div>
 
+        <div class="space-y-1">
+            <label for="weight" class="text-xs font-bold text-slate-700 dark:text-slate-300">Bobot AHP</label>
+            <input type="number" step="0.0001" min="0" name="weight" id="weight" value="{{ old('weight', 0.0) }}" placeholder="0.2897" class="w-full px-4 py-2.5 bg-surface-container-low dark:bg-slate-900 border border-outline-variant dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 font-medium text-xs text-slate-800 dark:text-slate-200" required>
+            <p class="text-[11px] text-gray-500 dark:text-slate-400 mt-1">Masukkan bobot AHP (bisa lebih dari 1). Bobot ini akan digunakan dalam perhitungan ranking TOPSIS.</p>
+            @error('weight')
+                <p class="text-[11px] text-red-500 mt-1 font-semibold">{{ $message }}</p>
+            @enderror
+        </div>
+
         <div class="flex justify-end gap-3 pt-4 border-t border-gray-100 dark:border-slate-700/60">
             <a href="{{ route('criterias.index') }}" class="px-5 py-2.5 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 text-slate-700 dark:text-slate-200 font-bold text-xs rounded-xl transition-all">
                 Batal

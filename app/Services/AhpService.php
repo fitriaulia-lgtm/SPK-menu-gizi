@@ -11,11 +11,11 @@ namespace App\Services;
  * sebagai input pembobotan pada proses TOPSIS.
  *
  * Kriteria yang digunakan (semua berjenis Benefit):
- *   C1 – Energi       : 0.0953
- *   C2 – Protein      : 0.3104
- *   C3 – Lemak        : 0.0592
- *   C4 – Karbohidrat  : 0.2389
- *   C5 – Serat        : 0.2961
+ *   C1 – Energi       : 0.2897
+ *   C2 – Protein      : 0.2897
+ *   C3 – Lemak        : 0.1331
+ *   C4 – Karbohidrat  : 0.1924
+ *   C5 – Serat        : 0.0951
  *
  * Rasio Konsistensi (CR) = 0.0247 < 0.10  → Konsisten (dapat diterima)
  */
@@ -46,11 +46,11 @@ class AhpService
      * Bobot vektor prioritas AHP yang telah dihitung (fixed weights)
      */
     private array $weights = [
-        'C1' => 0.0953,
-        'C2' => 0.3104,
-        'C3' => 0.0592,
-        'C4' => 0.2389,
-        'C5' => 0.2961,
+        'C1' => 0.2897,
+        'C2' => 0.2897,
+        'C3' => 0.1331,
+        'C4' => 0.1924,
+        'C5' => 0.0951,
     ];
 
     /**

@@ -25,194 +25,222 @@ use App\Models\AlternativeValue;
  */
 class TopsisService
 {
-    /**
-     * Bobot vektor prioritas AHP yang bersifat tetap.
-     * Sumber: hasil perhitungan AHP dengan CR = 0.0247 < 0.10 (Konsisten).
-     *
-     * @var array<string, float>
-     */
-    private array $weights = [
-        'C1' => 0.0953, // Energi
-        'C2' => 0.3104, // Protein
-        'C3' => 0.0592, // Lemak
-        'C4' => 0.2389, // Karbohidrat
-        'C5' => 0.2961, // Serat
-    ];
+    private static ?array $cachedWeights = null;
+    private static ?array $cachedRanking = null;
 
-    /**
-     * Menjalankan seluruh tahapan perhitungan TOPSIS.
-     *
-     * @return array{
-     *   rankingResults: array,
-     *   bestMenu: array|null,
-     *   steps: array
-     * }
-     */
-    public function calculate(): array
+    private function getCachedWeights(): array
     {
-        // ─────────────────────────────────────────────────────────────────
-        // LANGKAH 1 — Ambil data dari database
-        // ─────────────────────────────────────────────────────────────────
-        $criterias    = Criteria::all()->keyBy('code');          // Collection keyed by 'C1','C2',...
-        $alternatives = Alternative::with('alternativeValues')->get();
+        if (self::$cachedWeights !== null) {
+            return self::$cachedWeights;
+        }
+        $criterias = Criteria::all()->keyBy('code');
+        $weights = [];
+        foreach ($criterias as $code => $crit) {
+            $weights[$code] = $crit->weight > 0 ? (float) $crit->weight : 0.0;
+        }
+        $total = array_sum($weights);
+        if ($total > 0) {
+            foreach ($weights as $code => $w) {
+                $weights[$code] = $w / $total;
+            }
+        }
+        return self::$cachedWeights = $weights;
+    }
+
+    private function buildValueMap($alternatives, $criterias): array
+    {
+        $codeById = [];
+        foreach ($criterias as $code => $crit) {
+            $codeById[$crit->id] = $code;
+        }
+        $valueMap = [];
+        foreach ($alternatives as $alt) {
+            $valueMap[$alt->id] = array_fill_keys($criterias->keys()->toArray(), 0.0);
+            foreach ($alt->alternativeValues as $av) {
+                $code = $codeById[$av->criteria_id] ?? null;
+                if ($code) {
+                    $valueMap[$alt->id][$code] = (float) $av->value;
+                }
+            }
+        }
+        return $valueMap;
+    }
+
+    public function calculate(bool $useStoredScores = true, $alternatives = null, $criterias = null): array
+    {
+        if ($useStoredScores && self::$cachedRanking !== null) {
+            return self::$cachedRanking;
+        }
+
+        $criterias = $criterias ?? Criteria::all()->keyBy('code');
+        $alternatives = $alternatives ?? Alternative::with('alternativeValues')->get();
 
         if ($alternatives->isEmpty() || $criterias->isEmpty()) {
-            return [
-                'rankingResults' => [],
-                'bestMenu'       => null,
-                'steps'          => [],
-            ];
+            return ['rankingResults' => [], 'bestMenu' => null, 'weights' => [], 'steps' => []];
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // LANGKAH 2 — Susun Matriks Keputusan X [alternatif × kriteria]
-        //   x_{ij} = nilai alternatif i pada kriteria j
-        // ─────────────────────────────────────────────────────────────────
-        $matrixX = [];
-        foreach ($alternatives as $alt) {
-            foreach ($criterias as $critCode => $crit) {
-                $valObj = $alt->alternativeValues
-                    ->where('criteria_id', $crit->id)
-                    ->first();
-                $matrixX[$alt->id][$critCode] = $valObj ? (float) $valObj->value : 0.0;
-            }
-        }
+        $weights = $this->getCachedWeights();
+        $criteriaCodes = $criterias->keys()->toArray();
+        $valueMap = $this->buildValueMap($alternatives, $criterias);
 
-        // ─────────────────────────────────────────────────────────────────
-        // LANGKAH 3 — Normalisasi Matriks (Euclidean)
-        //   divider_j = sqrt( Σ x_{ij}² )
-        //   r_{ij}    = x_{ij} / divider_j
-        // ─────────────────────────────────────────────────────────────────
+        $matrixX = $valueMap;
+
         $dividers = [];
-        foreach ($criterias as $critCode => $crit) {
+        foreach ($criteriaCodes as $code) {
             $sumSq = 0.0;
             foreach ($alternatives as $alt) {
-                $sumSq += ($matrixX[$alt->id][$critCode] ** 2);
+                $sumSq += ($matrixX[$alt->id][$code] ** 2);
             }
-            $dividers[$critCode] = $sumSq > 0 ? sqrt($sumSq) : 1.0;
+            $dividers[$code] = $sumSq > 0 ? sqrt($sumSq) : 1.0;
         }
 
-        $matrixR = [];
-        foreach ($alternatives as $alt) {
-            foreach ($criterias as $critCode => $crit) {
-                $matrixR[$alt->id][$critCode] =
-                    $matrixX[$alt->id][$critCode] / $dividers[$critCode];
-            }
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // LANGKAH 4 — Pembobotan Matriks Ternormalisasi
-        //   y_{ij} = w_j × r_{ij}
-        // ─────────────────────────────────────────────────────────────────
         $matrixY = [];
         foreach ($alternatives as $alt) {
-            foreach ($criterias as $critCode => $crit) {
-                $weight = $this->weights[$critCode] ?? 0.0;
-                $matrixY[$alt->id][$critCode] =
-                    $matrixR[$alt->id][$critCode] * $weight;
+            foreach ($criteriaCodes as $code) {
+                $matrixY[$alt->id][$code] = ($matrixX[$alt->id][$code] / $dividers[$code]) * $weights[$code];
             }
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // LANGKAH 5 — Tentukan Solusi Ideal Positif (A+) & Negatif (A-)
-        //   Untuk kriteria benefit : A+_j = max(y_{ij}), A-_j = min(y_{ij})
-        //   Untuk kriteria cost    : A+_j = min(y_{ij}), A-_j = max(y_{ij})
-        // ─────────────────────────────────────────────────────────────────
         $idealPos = [];
         $idealNeg = [];
-        foreach ($criterias as $critCode => $crit) {
-            $colValues = array_column(
-                array_map(fn ($alt) => $matrixY[$alt->id], $alternatives->all()),
-                $critCode
-            );
-
-            $isBenefit = ($crit->attribute !== 'cost');
-
-            $idealPos[$critCode] = $isBenefit ? max($colValues) : min($colValues);
-            $idealNeg[$critCode] = $isBenefit ? min($colValues) : max($colValues);
+        foreach ($criteriaCodes as $code) {
+            $colValues = array_column($matrixY, $code);
+            $isBenefit = ($criterias[$code]->attribute !== 'cost');
+            $idealPos[$code] = $isBenefit ? max($colValues) : min($colValues);
+            $idealNeg[$code] = $isBenefit ? min($colValues) : max($colValues);
         }
 
-        // ─────────────────────────────────────────────────────────────────
-        // LANGKAH 6 — Hitung Jarak ke Solusi Ideal
-        //   D+_i = sqrt( Σ (y_{ij} − A+_j)² )
-        //   D-_i = sqrt( Σ (y_{ij} − A-_j)² )
-        // ─────────────────────────────────────────────────────────────────
-        $dPos       = [];
-        $dNeg       = [];
-        $preference = [];
-
+        $rankingResults = [];
         foreach ($alternatives as $alt) {
             $sumSqPos = 0.0;
             $sumSqNeg = 0.0;
-
-            foreach ($criterias as $critCode => $crit) {
-                $y         = $matrixY[$alt->id][$critCode];
-                $sumSqPos += (($y - $idealPos[$critCode]) ** 2);
-                $sumSqNeg += (($y - $idealNeg[$critCode]) ** 2);
+            foreach ($criteriaCodes as $code) {
+                $y = $matrixY[$alt->id][$code];
+                $sumSqPos += (($y - $idealPos[$code]) ** 2);
+                $sumSqNeg += (($y - $idealNeg[$code]) ** 2);
             }
 
-            $dPos[$alt->id] = sqrt($sumSqPos);
-            $dNeg[$alt->id] = sqrt($sumSqNeg);
+            $dPos = sqrt($sumSqPos);
+            $dNeg = sqrt($sumSqNeg);
+            $computedScore = ($dPos + $dNeg) > 0 ? ($dNeg / ($dPos + $dNeg)) : 0.0;
+            $displayScore = ($useStoredScores && $alt->score !== null) ? (float) $alt->score : $computedScore;
 
-            // ─────────────────────────────────────────────────────────────
-            // LANGKAH 7 — Nilai Preferensi
-            //   Vi = D-_i / (D+_i + D-_i)
-            // ─────────────────────────────────────────────────────────────
-            $total                = $dPos[$alt->id] + $dNeg[$alt->id];
-            $preference[$alt->id] = $total > 0
-                ? ($dNeg[$alt->id] / $total)
-                : 0.0;
-        }
-
-        // ─────────────────────────────────────────────────────────────────
-        // LANGKAH 8 — Susun & Urutkan Hasil Perangkingan
-        // ─────────────────────────────────────────────────────────────────
-        $rankingResults = [];
-        foreach ($alternatives as $alt) {
             $rankingResults[] = [
-                'id'    => $alt->id,
-                'code'  => $alt->code,
-                'name'  => $alt->name,
-                'score' => $preference[$alt->id],
-                'd_pos' => $dPos[$alt->id],
-                'd_neg' => $dNeg[$alt->id],
+                'id' => $alt->id, 'code' => $alt->code, 'name' => $alt->name,
+                'score' => $displayScore, 'd_pos' => $dPos, 'd_neg' => $dNeg,
             ];
         }
 
-        // Urutkan berdasarkan Vi terbesar ke terkecil
         usort($rankingResults, static fn ($a, $b) => $b['score'] <=> $a['score']);
 
-        // Tambahkan atribut rank (1, 2, 3, …)
         foreach ($rankingResults as $index => &$res) {
             $res['rank'] = $index + 1;
         }
         unset($res);
 
-        $bestMenu = !empty($rankingResults) ? $rankingResults[0] : null;
-
         return [
             'rankingResults' => $rankingResults,
-            'bestMenu'       => $bestMenu,
-            'steps'          => [
-                'matrixX'  => $matrixX,
-                'dividers' => $dividers,
-                'matrixR'  => $matrixR,
-                'matrixY'  => $matrixY,
-                'idealPos' => $idealPos,
-                'idealNeg' => $idealNeg,
-                'dPos'     => $dPos,
-                'dNeg'     => $dNeg,
-            ],
+            'bestMenu' => $rankingResults[0] ?? null,
+            'weights' => $weights,
+            'steps' => ['matrixX' => $matrixX, 'dividers' => $dividers, 'matrixY' => $matrixY, 'idealPos' => $idealPos, 'idealNeg' => $idealNeg],
         ];
     }
 
-    /**
-     * Getter bobot AHP yang digunakan.
-     *
-     * @return array<string, float>
-     */
+    public function calculateWithTargets(array $targetValues, $alternatives = null, $criterias = null): array
+    {
+        $criterias = $criterias ?? Criteria::all()->keyBy('code');
+        $alternatives = $alternatives ?? Alternative::with('alternativeValues')->get();
+
+        if ($alternatives->isEmpty() || $criterias->isEmpty()) {
+            return ['rankingResults' => [], 'bestMenu' => null];
+        }
+
+        $weights = $this->getCachedWeights();
+        $criteriaCodes = $criterias->keys()->toArray();
+        $codeById = [];
+        foreach ($criterias as $code => $crit) {
+            $codeById[$crit->id] = $code;
+        }
+
+        $valueMap = [];
+        foreach ($alternatives as $alt) {
+            $valueMap[$alt->id] = array_fill_keys($criteriaCodes, 0.0);
+            foreach ($alt->alternativeValues as $av) {
+                $code = $codeById[$av->criteria_id] ?? null;
+                if ($code) {
+                    $valueMap[$alt->id][$code] = (float) $av->value;
+                }
+            }
+        }
+
+        $dividers = [];
+        foreach ($criteriaCodes as $code) {
+            $sumSq = 0.0;
+            foreach ($alternatives as $alt) {
+                $sumSq += ($valueMap[$alt->id][$code] ** 2);
+            }
+            $dividers[$code] = $sumSq > 0 ? sqrt($sumSq) : 1.0;
+        }
+
+        $matrixY = [];
+        foreach ($alternatives as $alt) {
+            foreach ($criteriaCodes as $code) {
+                $matrixY[$alt->id][$code] = ($valueMap[$alt->id][$code] / $dividers[$code]) * $weights[$code];
+            }
+        }
+
+        $idealPos = [];
+        $idealNeg = [];
+        foreach ($criteriaCodes as $code) {
+            $colValues = array_column($matrixY, $code);
+            $isBenefit = ($criterias[$code]->attribute !== 'cost');
+            if (isset($targetValues[$code])) {
+                $idealPos[$code] = (float) $targetValues[$code] * $weights[$code];
+                $idealNeg[$code] = $isBenefit ? min($colValues) : max($colValues);
+            } else {
+                $idealPos[$code] = $isBenefit ? max($colValues) : min($colValues);
+                $idealNeg[$code] = $isBenefit ? min($colValues) : max($colValues);
+            }
+        }
+
+        $rankingResults = [];
+        foreach ($alternatives as $alt) {
+            $sumSqPos = 0.0;
+            $sumSqNeg = 0.0;
+            foreach ($criteriaCodes as $code) {
+                $y = $matrixY[$alt->id][$code];
+                $sumSqPos += (($y - $idealPos[$code]) ** 2);
+                $sumSqNeg += (($y - $idealNeg[$code]) ** 2);
+            }
+            $dPos = sqrt($sumSqPos);
+            $dNeg = sqrt($sumSqNeg);
+            $score = ($dPos + $dNeg) > 0 ? ($dNeg / ($dPos + $dNeg)) : 0.0;
+            $rankingResults[] = ['id' => $alt->id, 'code' => $alt->code, 'name' => $alt->name, 'score' => $score, 'd_pos' => $dPos, 'd_neg' => $dNeg];
+        }
+
+        usort($rankingResults, static fn ($a, $b) => $b['score'] <=> $a['score']);
+        foreach ($rankingResults as $index => &$res) {
+            $res['rank'] = $index + 1;
+        }
+        unset($res);
+
+        return ['rankingResults' => $rankingResults, 'bestMenu' => $rankingResults[0] ?? null];
+    }
+
+    public function persistAll(array $rankingResults): void
+    {
+        foreach ($rankingResults as $res) {
+            Alternative::where('id', $res['id'])->update(['score' => $res['score']]);
+        }
+    }
+
     public function getWeights(): array
     {
-        return $this->weights;
+        return $this->getCachedWeights();
+    }
+
+    public static function clearCache(): void
+    {
+        self::$cachedWeights = null;
     }
 }

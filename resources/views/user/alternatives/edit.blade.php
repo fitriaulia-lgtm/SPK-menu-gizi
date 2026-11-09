@@ -34,18 +34,19 @@
                 <span class="material-symbols-outlined !text-base">nutrition</span>
                 Kandungan Parameter Gizi
             </h3>
-            
+
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 @foreach($criterias as $crit)
                 @php
-                    $oldVal = $values[$crit->id] ?? '';
+                    $unit = $crit->code == 'C1' ? 'kkal' : 'gram';
+                    $oldVal = old($crit->code, $alternative->alternativeValues->firstWhere('criteria_id', $crit->id)?->value ?? '');
                 @endphp
                 <div class="space-y-1 bg-slate-50/40 dark:bg-slate-900/30 p-3.5 rounded-xl border border-gray-200/50 dark:border-slate-800/80">
-                    <label for="values_{{ $crit->id }}" class="text-xs font-black text-slate-800 dark:text-slate-300">
-                        {{ $crit->name }} ({{ $crit->code }})
+                    <label for="{{ $crit->code }}" class="text-xs font-black text-slate-800 dark:text-slate-300">
+                        {{ $crit->name }} ({{ $unit }})
                     </label>
                     <div class="relative group">
-                        <input type="number" step="0.01" min="0" name="values[{{ $crit->id }}]" id="values_{{ $crit->id }}" value="{{ old('values.' . $crit->id, $oldVal) }}" class="w-full px-4 py-2 bg-white dark:bg-slate-950 border border-outline-variant dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 font-bold text-xs text-slate-800 dark:text-slate-200" required>
+                        <input type="number" step="0.01" min="0" name="{{ $crit->code }}" id="{{ $crit->code }}" value="{{ $oldVal }}" class="w-full px-4 py-2 bg-white dark:bg-slate-950 border border-outline-variant dark:border-slate-800 rounded-lg focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 font-bold text-xs text-slate-800 dark:text-slate-200" required>
                     </div>
                 </div>
                 @endforeach

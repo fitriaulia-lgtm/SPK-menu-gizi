@@ -3,7 +3,7 @@
 <head>
     <meta charset="utf-8"/>
     <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>Login | NutriDSS Admin Portal</title>
+    <title>Login | MBG Decision</title>
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
@@ -124,29 +124,13 @@
             <div class="relative z-10 p-xl max-w-xl text-on-primary space-y-6">
                 <div class="space-y-3">
                     <span class="material-symbols-outlined text-[54px] text-amber-400" style="font-variation-settings: 'FILL' 1;">analytics</span>
-                    <h1 class="font-display-lg text-4xl font-black tracking-tight text-white">NutriDSS Manager</h1>
+                    <h1 class="font-display-lg text-4xl font-black tracking-tight text-white">MBG Decision</h1>
                     <p class="text-sm font-semibold text-blue-200 leading-relaxed">
-                        Sistem Pendukung Keputusan Skala Nasional untuk Akurasi Program Kelayakan Gizi Seimbang Anak Sekolah.
+                       Sistem Pendukung Keputusan untuk Pemilihan Menu Gizi Seimbang pada Program Makan Bergizi Gratis.
                     </p>
                 </div>
-                
-                <!-- Indikator Metrik Kinerja -->
-                <div class="grid grid-cols-2 gap-md pt-4">
-                    <div class="glass-panel p-md rounded-2xl shadow-sm">
-                        <p class="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">Akurasi Sistem</p>
-                        <p class="text-2xl font-black text-white">99.8%</p>
-                        <p class="text-[11px] text-slate-300 font-medium">Validitas Data Riil</p>
-                    </div>
-                    <div class="glass-panel p-md rounded-2xl shadow-sm">
-                        <p class="text-[10px] font-bold text-blue-200 uppercase tracking-widest mb-1">Status Environtment</p>
-                        <p class="text-2xl font-black text-emerald-400 flex items-center gap-1">Optimal</p>
-                        <p class="text-[11px] text-slate-300 font-medium">Koneksi Enkripsi Aman</p>
-                    </div>
-                </div>
-            </div>
 
             <div class="absolute bottom-xl left-xl z-10 text-[11px] text-slate-400 font-semibold">
-                © 2026 NutriDSS Global. Seluruh hak cipta dilindungi undang-undang.
             </div>
         </section>
 
@@ -159,7 +143,7 @@
                     <div class="p-3 rounded-2xl bg-primary/10 text-primary dark:text-blue-400 mb-3">
                         <span class="material-symbols-outlined text-[32px]" style="font-variation-settings: 'FILL' 1;">analytics</span>
                     </div>
-                    <h2 class="text-xl font-black tracking-tight text-on-surface dark:text-white">NutriDSS Admin</h2>
+                    <h2 class="text-xl font-black tracking-tight text-on-surface dark:text-white">MBG Decision Admin</h2>
                     <p class="text-xs font-semibold text-on-surface-variant dark:text-slate-400 mt-1">Silakan otorisasikan kredensial petugas resmi Anda</p>
                 </div>
 
@@ -214,6 +198,24 @@
                         @endif
                     </div>
 
+                    <!-- Pilihan Peran/Role -->
+                    <div class="space-y-1.5">
+                        <label class="text-slate-700 dark:text-slate-300" for="role">Pilih Peran Anda</label>
+                        <div class="relative group">
+                            <span class="absolute left-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline dark:text-slate-500 group-focus-within:text-primary dark:group-focus-within:text-blue-400 transition-colors !text-[20px]">security</span>
+                            <select class="w-full pl-10 pr-4 py-2.5 bg-surface-container-low dark:bg-slate-950 border border-outline-variant dark:border-slate-800 rounded-xl focus:ring-2 focus:ring-primary dark:focus:ring-blue-500 focus:border-primary dark:focus:border-blue-500 transition-all font-medium text-slate-800 dark:text-slate-200 appearance-none cursor-pointer" 
+                                    id="role" name="role" required>
+                                <option value="admin">Admin</option>
+                                <option value="petugas">Petugas</option>
+                            </select>
+                            <!-- Custom Dropdown Icon -->
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 material-symbols-outlined text-outline dark:text-slate-500 pointer-events-none !text-[20px]">expand_more</span>
+                        </div>
+                        @if ($errors->has('role'))
+                            <p class="text-[11px] text-red-500 mt-1 font-medium">{{ $errors->first('role') }}</p>
+                        @endif
+                    </div>
+
                     <!-- Pilihan Ingat Perangkat -->
                     <div class="flex items-center gap-2 pt-1">
                         <input class="w-4 h-4 rounded border-outline-variant dark:border-slate-800 text-primary dark:text-blue-500 focus:ring-primary dark:focus:ring-blue-500 dark:bg-slate-950" id="remember" name="remember" type="checkbox"/>
@@ -223,7 +225,7 @@
                     <!-- Tombol Masuk dengan Animasi Mikro Pemuat -->
                     <div class="pt-2">
                         <button id="submit-btn" class="w-full py-3 bg-primary dark:bg-blue-600 text-on-primary font-bold text-xs rounded-xl hover:bg-primary-hover dark:hover:bg-blue-700 shadow-md active:scale-[0.98] transition-all flex items-center justify-center gap-2" type="submit">
-                            <span>Masuk Sebagai Admin</span>
+                            <span id="button-text">Masuk Sebagai Admin</span>
                             <span class="material-symbols-outlined text-[18px]">login</span>
                         </button>
                     </div>
@@ -231,13 +233,11 @@
 
                 <!-- Footer Info & Navigasi Kembali ke Beranda -->
                 <div class="pt-4 border-t border-outline-variant/30 dark:border-slate-800/80 text-center space-y-4">
-                    <p class="text-[11px] text-on-surface-variant dark:text-slate-500 font-medium leading-relaxed">
-                        Akses terbatas khusus personel resmi pelaksana SPPG Kecamatan Kertek Wonosobo. Seluruh aktivitas log dipantau ketat.
                     </p>
-                    <div class="flex justify-center gap-4">
-                        <a href="{{ route('public.portal') }}" class="text-xs font-bold text-gray-400 hover:text-primary dark:hover:text-blue-400 flex items-center gap-1 group">
-                            <span class="material-symbols-outlined !text-sm transform group-hover:-translate-x-0.5 transition-transform">arrow_back</span> 
-                            Kembali ke Portal Utama
+                    <div class="flex flex-col gap-3 items-center">
+                        <a href="{{ route('register') }}" class="text-xs font-bold text-primary dark:text-blue-400 hover:underline flex items-center gap-1 group">
+                            <span class="material-symbols-outlined !text-sm transform group-hover:-translate-x-0.5 transition-transform">person_add</span>
+                            Buat Akun Baru
                         </a>
                     </div>
                 </div>
@@ -245,11 +245,6 @@
         </section>
     </main>
 
-    <!-- Indikator Status Server Atas -->
-    <div class="fixed top-4 right-4 hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/80 dark:bg-slate-900 border border-outline-variant/50 dark:border-slate-800 shadow-sm z-50 transition-colors">
-        <div class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></div>
-        <span class="text-[11px] font-bold text-on-surface-variant dark:text-slate-400">Status Server: Terkoneksi</span>
-    </div>
 
     <!-- SCRIPT AKTIVITAS INTERAKTIF FORM -->
     <script>
@@ -277,6 +272,16 @@
                 passwordInput.type = 'password';
                 visibilityIcon.textContent = 'visibility';
             }
+        });
+
+        // 2.5. Update Tombol Teks Berdasarkan Pilihan Role
+        const roleSelect = document.getElementById('role');
+        const buttonText = document.getElementById('button-text');
+        
+        roleSelect.addEventListener('change', function() {
+            const selectedRole = this.value;
+            const roleLabel = selectedRole === 'admin' ? 'Admin' : 'Petugas';
+            buttonText.textContent = `Masuk Sebagai ${roleLabel}`;
         });
 
         // 3. Efek Pemuat (Loading State Animation) saat Form Dikirim
