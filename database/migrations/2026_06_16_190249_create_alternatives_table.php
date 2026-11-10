@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -9,15 +10,16 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('alternatives', function (Blueprint $table) {
-            $table->integer('Id_alternatif', 4);
-            $table->string('Kode_alternatif', 5)->unique(); // A1, A2, A3, dst.
-            $table->text('Komposisi_menu');                 // Detail menu makanan
-            $table->double('Nilai_energi')->nullable();     // Energi (kkal)
-            $table->double('Nilai_protein')->nullable();    // Protein (gram)
-            $table->double('Nilai_lemak')->nullable();      // Lemak (gram)
-            $table->double('Nilai_karbohidrat')->nullable(); // Karbohidrat (gram)
-            $table->double('Nilai_serat')->nullable();      // Serat (gram)
-            $table->double('score')->nullable();            // Nilai preferensi V_i (TOPSIS)
+            $table->integer('Id_alternatif');
+            $table->string('Kode_alternatif', 5)->unique();
+            $table->text('Komposisi_menu');
+            $table->double('Nilai_energi')->nullable();
+            $table->double('Nilai_protein')->nullable();
+            $table->double('Nilai_lemak')->nullable();
+            $table->double('Nilai_karbohidrat')->nullable();
+            $table->double('Nilai_serat')->nullable();
+            $table->double('score')->nullable();
+
             $table->primary('Id_alternatif');
         });
     }
