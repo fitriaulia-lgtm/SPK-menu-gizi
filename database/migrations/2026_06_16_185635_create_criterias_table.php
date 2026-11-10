@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Database\Migrations\Migration;
@@ -9,11 +10,12 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('criterias', function (Blueprint $table) {
-            $table->integer('Id_kriteria', 4);
-            $table->string('Kode_kriteria', 25)->unique(); // C1, C2, C3, dst.
-            $table->string('Nama_Parameter', 25);          // Energi, Protein, Lemak, dst.
+            $table->integer('Id_kriteria');
+            $table->string('Kode_kriteria', 25)->unique();
+            $table->string('Nama_Parameter', 25);
             $table->enum('Atribut', ['benefit', 'cost'])->default('benefit');
             $table->double('Bobot_ahp')->nullable();
+
             $table->primary('Id_kriteria');
         });
     }
